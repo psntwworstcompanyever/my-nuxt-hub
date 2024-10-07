@@ -14,7 +14,7 @@ const { data: settingData } = await useFetch('/api/fetchSetting', {
     }
 })
 
-// // Reconstruct softwareData from source. (softwareSourceData is a reactive value)
+// Reconstruct softwareData from source. (softwareSourceData is a reactive value)
 const softwareData = reconstructFunction(softwareSourceData.value)
 
 // Hardware node is left empty as it is hard to deal with while loading at the setup phase.
@@ -150,7 +150,9 @@ onMounted(() => {
     const softwareNode = getNode('software');
     customersNode.on('commit', async ({ payload }) => {
         // Fetch new data
-        const newSettingData = await fetchSettingData(payload);
+        console.log(payload)
+        const newSettingData = await fetchSettingData(payload)
+        console.log(newSettingData)
         // Update settingData
         settingData.value = newSettingData;
         // To avoid reference bettwen two arrays.
