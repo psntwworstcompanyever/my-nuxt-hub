@@ -8,17 +8,20 @@ const { data: customersData } = await useFetch('/api/fetchCustomers');
 const { data: mailAddressesData } = await useFetch('/api/fetchMailAddresses');
 const { data: popCardData } = await useFetch('/api/fetchPopCard');
 const { data: softwareSourceData } = await useFetch('/api/fetchSoftware');
-const { data: settingData } = await useFetch('/api/fetchSetting', {
-    params: {
-        customer: 'Default'
-    }
-})
+// const { data: settingData } = await useFetch('/api/fetchSetting', {
+//     params: {
+//         customer: 'Default'
+//     }
+// })
 
 // Reconstruct softwareData from source. (softwareSourceData is a reactive value)
 const softwareData = reconstructFunction(softwareSourceData.value)
 
 // Hardware node is left empty as it is hard to deal with while loading at the setup phase.
 const hardwareData = ref([])
+
+// Restriction set by Cloudflare.
+const settingData = ref([])
 
 // Handle popup card
 const isPopupVisible = ref(false);
@@ -159,6 +162,8 @@ onMounted(() => {
         const deepCopy = JSON.parse(JSON.stringify(settingData.value.parameter));
         // Update softwareNode
         softwareNode.input(deepCopy)
+        // Lock the customerNode
+        customersNode.props.disabled = true
     })
 });
 
