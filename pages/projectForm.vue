@@ -6,13 +6,7 @@ import { ref, onMounted } from 'vue'
 const { data: boardsData } = await useFetch('/api/fetchBoards');
 const { data: customersData } = await useFetch('/api/fetchCustomers');
 const { data: mailAddressesData } = await useFetch('/api/fetchMailAddresses');
-const { data: popCardData } = await useFetch('/api/fetchPopCard');
 const { data: softwareSourceData } = await useFetch('/api/fetchSoftware');
-// const { data: settingData } = await useFetch('/api/fetchSetting', {
-//     params: {
-//         customer: 'Default'
-//     }
-// })
 
 // Reconstruct softwareData from source. (softwareSourceData is a reactive value)
 const softwareData = reconstructFunction(softwareSourceData.value)
@@ -20,11 +14,12 @@ const softwareData = reconstructFunction(softwareSourceData.value)
 // Hardware node is left empty as it is hard to deal with while loading at the setup phase.
 const hardwareData = ref([])
 
-// Restriction set by Cloudflare.
+// Restriction set by Cloudflare. For some reason, I can only left settingData empty at the setup phase.
 const settingData = ref([])
 
 // Handle popup card
 const isPopupVisible = ref(false);
+const popCardContent = ref([])
 
 // Function to process an array of objects
 function reconstructFunction(arr) {
@@ -81,7 +76,7 @@ function addMethodToArray(obj) {
                         props: {
                             ...child.props,
                             onPrefixIconClick: () => {
-                                handleIconClick(getNode(child.props.id), getNode('customers'), getNode('popcard'));
+                                handleIconClick(getNode(child.props.id), getNode('customers'));
                             }
                         }
                     };
@@ -93,18 +88,30 @@ function addMethodToArray(obj) {
     return obj;
 }
 
-function handleIconClick(clickedNode, customerNode, popCardNode) {
-    const cardContent = {
-        pop_specification: clickedNode.props.label,
-        pop_illustration: "XXX",
-        pop_selected_item: clickedNode.value,
-        pop_customer: customerNode.value,
-        pop_customer_setting: settingData.value.parameter[clickedNode.props.id],
-        pop_recommendation: settingData.value.note[clickedNode.props.id],
-    }
-    console.log(cardContent)
-    // Update the pop card
-    popCardNode.input(cardContent);
+function handleIconClick(clickedNode, customerNode) {
+    // Update pop card content
+    popCardContent.value = [
+        {
+            item: 'Specification',
+            description: clickedNode.props.label
+        },
+        {
+            item: 'Illustration',
+            description: "XXX"
+        },
+        {
+            item: 'Selected Item',
+            description: clickedNode.value
+        },
+        {
+            item: "Customer",
+            description: customerNode.value
+        },
+        {
+            item: "Customer Setting",
+            description: settingData.value.parameter[clickedNode.props.id]
+        },
+    ]
     // Show the popup
     isPopupVisible.value = true;
 }
@@ -183,12 +190,9 @@ onMounted(() => {
             <FormKitSchema :schema="softwareData" :data="validation" />
         </FormKit>
     </FormKit>
-    <div v-show="isPopupVisible" class="popup">
-        <FormKit type="group" name="popcard" id="popcard">
-            <FormKitSchema :schema="popCardData" />
-        </FormKit>
-        <button @click="isPopupVisible = false">Close</button>
-    </div>
+    <UModal v-model="isPopupVisible">
+        <UTable :rows="popCardContent" />
+    </UModal>
 </template>
 
 <style>
@@ -213,17 +217,5 @@ onMounted(() => {
 
 .formkit-input {
     border: 1px solid #ccc;
-}
-
-.popup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    padding: 20px;
-    z-index: 1000;
-    border: 1px solid #ddd;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 </style>
