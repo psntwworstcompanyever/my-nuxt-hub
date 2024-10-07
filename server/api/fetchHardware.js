@@ -5,7 +5,6 @@ const url = config.apiUrl;
 const client = new PocketBase(url);
 
 export default defineEventHandler(async (event) => {
-    console.time('fetchHardware');
     const { pcba_sn } = getQuery(event)
     const record = await client.collection('hardware').getFirstListItem(`pcba_sn="${pcba_sn}"`);
     const schemaList = [
@@ -18,6 +17,5 @@ export default defineEventHandler(async (event) => {
             "children": record.data,
         },
     ]
-    console.timeEnd('fetchHardware');
     return schemaList;
 });
