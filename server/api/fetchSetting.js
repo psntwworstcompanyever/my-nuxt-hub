@@ -5,6 +5,7 @@ const url = config.apiUrl;
 const client = new PocketBase(url);
 
 export default defineEventHandler(async (event) => {
+    console.time('fetchSetting');
     const { customer } = getQuery(event);
     const records = await client.collection('setting').getList(1, 50, {
         filter: `customer = "${customer}"`,
@@ -15,6 +16,7 @@ export default defineEventHandler(async (event) => {
         acc.note[item.specification] = item.note;
         return acc;
     }, { parameter: {}, note: {} });
+    console.timeEnd('fetchSetting');
 
     return transformedData;
 });

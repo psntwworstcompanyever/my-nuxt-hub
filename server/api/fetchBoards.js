@@ -25,6 +25,5 @@ export default defineEventHandler(async (event) => {
             options: options
         }
     };
-
     return schemaObject;
 });
