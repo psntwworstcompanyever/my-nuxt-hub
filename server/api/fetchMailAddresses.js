@@ -6,6 +6,7 @@ export default defineEventHandler(async (event) => {
     // Create a new PocketBase client instance for each request
     const client = new PocketBase(config.apiUrl);
 
+    // Use try and catch to handle error
     try {
         // Fetch data from PocketBase with error handling
         const records = await client.collection('mailAddresses').getFullList({

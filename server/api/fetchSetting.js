@@ -1,10 +1,10 @@
 import PocketBase from 'pocketbase';
 
 const config = useRuntimeConfig();
-const url = config.apiUrl;
-const client = new PocketBase(url);
 
 export default defineEventHandler(async (event) => {
+    // Create a new PocketBase client instance for each request
+    const client = new PocketBase(config.apiUrl);
     try {
         const { customer } = getQuery(event);
         const records = await client.collection('setting').getList(1, 50, {
