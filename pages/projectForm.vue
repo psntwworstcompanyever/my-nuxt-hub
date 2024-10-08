@@ -15,7 +15,10 @@ const softwareData = reconstructFunction(softwareSourceData.value)
 const hardwareData = ref([])
 
 // Restriction set by Cloudflare. For some reason, I can only left settingData empty at the setup phase.
+// Also, FormKit behave weird as long as the initial vaildation failed. So, I came up with there three lines.
 const settingData = ref([])
+const defaultSettingData = await fetchSettingData("Default")
+settingData.value = defaultSettingData
 
 // Handle popup card
 const isPopupVisible = ref(false);
@@ -188,6 +191,7 @@ onMounted(() => {
         </FormKit>
         <FormKit type="group" name="software" id="software">
             <FormKitSchema :schema="softwareData" :data="validation" />
+            <!-- <FormKitSchema :schema="softwareData" /> -->
         </FormKit>
     </FormKit>
     <UModal v-model="isPopupVisible">
