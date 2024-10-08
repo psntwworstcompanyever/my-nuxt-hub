@@ -6,15 +6,18 @@ import { ref, onMounted } from 'vue'
 const { data: boardsData } = await useFetch('/api/fetchBoards');
 const { data: customersData } = await useFetch('/api/fetchCustomers');
 const { data: mailAddressesData } = await useFetch('/api/fetchMailAddresses');
+const { data: softwareSourceData } = await useFetch('/api/fetchSoftware');
+const { data: settingData } = await useFetch('/api/fetchSetting', {
+    params: {
+        customer: 'Default'
+    }
+})
 
-// Software node is left empty as it is causes FormKit failed in the initial validation, therefore freeze the submit button.
-const softwareData = ref([])
+// Reconstruct softwareData from source. (softwareSourceData is a reactive value)
+const softwareData = reconstructFunction(softwareSourceData.value)
 
 // Hardware node is left empty as it is hard to deal with while loading at the setup phase.
 const hardwareData = ref([])
-
-// Restriction set by Cloudflare. Users cannot reuse database conn in setup and onMounted phase.
-const settingData = ref([])
 
 // Handle popup card
 const isPopupVisible = ref(false);
@@ -32,12 +35,6 @@ async function fetchHardwareData(payload) {
             pcba_sn: payload
         }
     })
-    return newData;
-}
-
-// Function to fetch software data
-async function fetchSoftwareData(payload) {
-    const newData = await $fetch('/api/fetchSoftware')
     return newData;
 }
 
@@ -145,7 +142,6 @@ async function handleSubmit() {
     }
 }
 
-
 onMounted(() => {
     const boardsNode = getNode('boards');
     boardsNode.on('commit', async ({ payload }) => {
@@ -162,22 +158,14 @@ onMounted(() => {
     const customersNode = getNode('customers');
     const softwareNode = getNode('software');
     customersNode.on('commit', async ({ payload }) => {
-        // Fetch new data (Settings)
+        // Fetch new data
         const newSettingData = await fetchSettingData(payload)
         // Update settingData
         settingData.value = newSettingData;
         // To avoid reference bettwen two arrays.
         const deepCopy = JSON.parse(JSON.stringify(settingData.value.parameter))
-        // Fetch new data (Software)
-        const softwareSourceData = await fetchSoftwareData()
-        // Reconstruct softwareData from source. (softwareSourceData is not a reactive value)
-        const reconstructSoftwareSourceData = reconstructFunction(softwareSourceData)
-        // Update softwareNode with the source data.
-        softwareData.value = reconstructSoftwareSourceData
         // Update softwareNode with the customer settings.
         softwareNode.input(deepCopy)
-        // Lock the customerNode
-        customersNode.props.disabled = true
     })
 });
 

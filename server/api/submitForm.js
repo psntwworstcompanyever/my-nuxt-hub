@@ -1,11 +1,10 @@
-// ~/server/api/submitForm.js
 import PocketBase from 'pocketbase';
 
 const config = useRuntimeConfig();
-const url = config.apiUrl;
-const client = new PocketBase(url);
 
 export default defineEventHandler(async (event) => {
+    // Create a new PocketBase client instance for each request
+    const client = new PocketBase(config.apiUrl);
     const body = await readBody(event); // Use readBody to parse the JSON body
 
     const data = {
