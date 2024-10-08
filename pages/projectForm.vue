@@ -9,16 +9,16 @@ const { data: mailAddressesData } = await useFetch('/api/fetchMailAddresses');
 const { data: softwareSourceData } = await useFetch('/api/fetchSoftware');
 
 // Reconstruct softwareData from source. (softwareSourceData is a reactive value)
-const softwareData = reconstructFunction(softwareSourceData.value)
+const reconstructSoftwareSourceData = reconstructFunction(softwareSourceData.value)
+
+// Software node is left empty as it is causes FormKit failed in the initial validation, therefore freeze the submit button.
+const softwareData = ref([])
 
 // Hardware node is left empty as it is hard to deal with while loading at the setup phase.
 const hardwareData = ref([])
 
 // Restriction set by Cloudflare. For some reason, I can only left settingData empty at the setup phase.
-// Also, FormKit behave weird as long as the initial vaildation failed. So, I came up with there three lines.
 const settingData = ref([])
-const defaultSettingData = await fetchSettingData("Default")
-settingData.value = defaultSettingData
 
 // Handle popup card
 const isPopupVisible = ref(false);
@@ -163,14 +163,14 @@ onMounted(() => {
     const softwareNode = getNode('software');
     customersNode.on('commit', async ({ payload }) => {
         // Fetch new data
-        console.log(payload)
         const newSettingData = await fetchSettingData(payload)
-        console.log(newSettingData)
         // Update settingData
         settingData.value = newSettingData;
         // To avoid reference bettwen two arrays.
-        const deepCopy = JSON.parse(JSON.stringify(settingData.value.parameter));
-        // Update softwareNode
+        const deepCopy = JSON.parse(JSON.stringify(settingData.value.parameter))
+        // Update softwareNode with the source data.
+        softwareData.value = reconstructSoftwareSourceData
+        // Update softwareNode with the customer settings.
         softwareNode.input(deepCopy)
         // Lock the customerNode
         customersNode.props.disabled = true
@@ -191,7 +191,6 @@ onMounted(() => {
         </FormKit>
         <FormKit type="group" name="software" id="software">
             <FormKitSchema :schema="softwareData" :data="validation" />
-            <!-- <FormKitSchema :schema="softwareData" /> -->
         </FormKit>
     </FormKit>
     <UModal v-model="isPopupVisible">
