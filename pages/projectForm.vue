@@ -6,10 +6,6 @@ import { ref, onMounted } from 'vue'
 const { data: boardsData } = await useFetch('/api/fetchBoards');
 const { data: customersData } = await useFetch('/api/fetchCustomers');
 const { data: mailAddressesData } = await useFetch('/api/fetchMailAddresses');
-const { data: softwareSourceData } = await useFetch('/api/fetchSoftware');
-
-// Reconstruct softwareData from source. (softwareSourceData is a reactive value)
-const reconstructSoftwareSourceData = reconstructFunction(softwareSourceData.value)
 
 // Software node is left empty as it is causes FormKit failed in the initial validation, therefore freeze the submit button.
 const softwareData = ref([])
@@ -17,7 +13,7 @@ const softwareData = ref([])
 // Hardware node is left empty as it is hard to deal with while loading at the setup phase.
 const hardwareData = ref([])
 
-// Restriction set by Cloudflare. For some reason, I can only left settingData empty at the setup phase.
+// Restriction set by Cloudflare. Users cannot reuse database conn in setup and onMounted phase.
 const settingData = ref([])
 
 // Handle popup card
@@ -36,6 +32,12 @@ async function fetchHardwareData(payload) {
             pcba_sn: payload
         }
     })
+    return newData;
+}
+
+// Function to fetch software data
+async function fetchSoftwareData(payload) {
+    const newData = await $fetch('/api/fetchSoftware')
     return newData;
 }
 
@@ -148,12 +150,10 @@ onMounted(() => {
     const boardsNode = getNode('boards');
     boardsNode.on('commit', async ({ payload }) => {
         // Fetch new data
-        console.log(payload)
         const hardwareSourceData = await fetchHardwareData(payload)
-        console.log(hardwareSourceData)
         // Reconstruct hardwareData from source. (hardwareSourceData is not a reactive value)
         const hardwareReconstructData = reconstructFunction(hardwareSourceData)
-        // Update it
+        // Update hardware node.
         hardwareData.value = hardwareReconstructData
         // Lock the boardNode as the change in hardwareData tend to lead to errors.
         boardsNode.props.disabled = true
@@ -162,12 +162,17 @@ onMounted(() => {
     const customersNode = getNode('customers');
     const softwareNode = getNode('software');
     customersNode.on('commit', async ({ payload }) => {
-        // Fetch new data
+        // Fetch new data (Settings)
         const newSettingData = await fetchSettingData(payload)
         // Update settingData
         settingData.value = newSettingData;
         // To avoid reference bettwen two arrays.
         const deepCopy = JSON.parse(JSON.stringify(settingData.value.parameter))
+
+        // Fetch new data (Software)
+        const softwareSourceData = await fetchSoftwareData()
+        // Reconstruct softwareData from source. (softwareSourceData is not a reactive value)
+        const reconstructSoftwareSourceData = reconstructFunction(softwareSourceData)
         // Update softwareNode with the source data.
         softwareData.value = reconstructSoftwareSourceData
         // Update softwareNode with the customer settings.
