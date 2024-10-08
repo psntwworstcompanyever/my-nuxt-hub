@@ -1,30 +1,45 @@
 import PocketBase from 'pocketbase';
 
 const config = useRuntimeConfig();
-const url = config.apiUrl;
-const client = new PocketBase(url);
 
 export default defineEventHandler(async (event) => {
-    const records = await client.collection('mailAddresses').getFullList({
-        sort: 'index'
-    });
+    // Create a new PocketBase client instance for each request
+    const client = new PocketBase(config.apiUrl);
 
-    // Create options by looping through the list and appending label and value
-    const options = records.map(item => ({
-        label: item.label,
-        value: item.value
-    }));
+    try {
+        // Fetch data from PocketBase with error handling
+        const records = await client.collection('mailAddresses').getFullList({
+            sort: 'index',
+            // You can limit the number of records if necessary
+            // perPage: 50 
+        });
 
-    const schemaObject = {
-        $cmp: "FormKit",
-        props: {
-            name: "mailAddresses",
-            type: "select",
-            id: "mailAddresses",
-            label: "Mail Addresses",
-            options: options
-        }
-    };
+        // Create options for FormKit schema
+        const options = records.map(item => ({
+            label: item.label,
+            value: item.value
+        }));
 
-    return schemaObject;
+        // Return the FormKit schema
+        const schemaObject = {
+            $cmp: "FormKit",
+            props: {
+                name: "mailAddresses",
+                type: "select",
+                id: "mailAddresses",
+                label: "Mail Addresses",
+                options: options
+            }
+        };
+
+        return schemaObject;
+
+    } catch (error) {
+        // Return a more graceful error response or handle logging
+        console.error('Error fetching data from PocketBase:', error);
+        throw createError({
+            statusCode: 500,
+            statusMessage: 'Failed to fetch mail addresses'
+        });
+    }
 });
