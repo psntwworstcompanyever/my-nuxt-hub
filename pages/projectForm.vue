@@ -168,7 +168,6 @@ onMounted(() => {
         settingData.value = newSettingData;
         // To avoid reference bettwen two arrays.
         const deepCopy = JSON.parse(JSON.stringify(settingData.value.parameter))
-
         // Fetch new data (Software)
         const softwareSourceData = await fetchSoftwareData()
         // Reconstruct softwareData from source. (softwareSourceData is not a reactive value)
