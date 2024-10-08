@@ -140,6 +140,15 @@ async function handleSubmit() {
             }
         });
         console.log(response);
+
+        // Remove the entire form
+        const formElement = document.getElementById('myform');
+        if (formElement) {
+            formElement.remove();
+        }
+
+        // Reload the page after successful submission and form removal
+        window.location.reload();
     } catch (error) {
         console.error('Error submitting form:', error);
     }
@@ -184,7 +193,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <FormKit type="form" id="form" @submit="handleSubmit">
+    <FormKit type="form" id="myform" @submit="handleSubmit">
         <FormKit type="group" name="header" id="header">
             <FormKitSchema :schema="boardsData" />
             <FormKitSchema :schema="customersData" />
