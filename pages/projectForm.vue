@@ -91,6 +91,7 @@ function addMethodToArray(obj) {
 }
 
 function handleIconClick(clickedNode, customerNode) {
+    console.log(clickedNode.props)
     // Update pop card content
     popCardContent.value = [
         {
@@ -99,11 +100,7 @@ function handleIconClick(clickedNode, customerNode) {
         },
         {
             item: 'Illustration',
-            description: "XXX"
-        },
-        {
-            item: 'Selected Item',
-            description: clickedNode.value
+            description: clickedNode.props.attrs.illustration
         },
         {
             item: "Customer",
@@ -113,6 +110,14 @@ function handleIconClick(clickedNode, customerNode) {
             item: "Customer Setting",
             description: settingData.value.parameter[clickedNode.props.id]
         },
+        {
+            item: 'Selected Item',
+            description: clickedNode.value
+        },
+        {
+            item: 'Note',
+            description: settingData.value.note[clickedNode.props.id]
+        }
     ]
     // Show the popup
     isPopupVisible.value = true;
@@ -173,11 +178,14 @@ onMounted(() => {
 
 <template>
     <FormKit type="form" id="myform" @submit="handleSubmit">
-        <FormKit type="group" name="header" id="header">
-            <FormKitSchema :schema="boardsData" />
-            <FormKitSchema :schema="customersData" />
-            <FormKitSchema :schema="mailAddressesData" />
-        </FormKit>
+        <h2>Header</h2>
+        <div class="header_container">
+            <FormKit type="group" name="header" id="header">
+                <FormKitSchema :schema="boardsData" />
+                <FormKitSchema :schema="customersData" />
+                <FormKitSchema :schema="mailAddressesData" />
+            </FormKit>
+        </div>
         <FormKit type="group" name="hardware" id="hardware">
             <FormKitSchema :schema="hardwareData" />
         </FormKit>
@@ -212,5 +220,11 @@ onMounted(() => {
 
 .formkit-input {
     border: 1px solid #ccc;
+}
+
+.header_container {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-bottom: 20px;
 }
 </style>
