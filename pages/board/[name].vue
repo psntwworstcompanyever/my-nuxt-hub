@@ -3,9 +3,26 @@ import { FormKitSchema } from '@formkit/vue'
 import { getNode } from '@formkit/core'
 import { ref, onMounted } from 'vue'
 
-const { data: boardsData } = await useFetch('/api/fetchBoards');
+// Load data from the boards table
+const route = useRoute();
+const useBoard = () => useState('board', () => null);
+const board = useBoard();
+
+// If the page is refreshed and state is lost, you could fetch the student data again
+// based on the route parameter
+if (!board.value && route.params.name) {
+    // You could fetch the student data here if needed
+    // For now, we'll just show that we lost the data
+    console.log('Board data not found for:', route.params.name);
+}
+
 const { data: customersData } = await useFetch('/api/fetchCustomers');
 const { data: mailAddressesData } = await useFetch('/api/fetchMailAddresses');
+const { data: hardwareSourceData } = await useFetch('/api/fetchHardware', {
+    params: {
+        pcba_sn: board.value.pcba_sn
+    }
+});
 const { data: softwareSourceData } = await useFetch('/api/fetchSoftware');
 const { data: settingData } = await useFetch('/api/fetchSetting', {
     params: {
@@ -13,11 +30,9 @@ const { data: settingData } = await useFetch('/api/fetchSetting', {
     }
 })
 
-// Reconstruct softwareData from source. (softwareSourceData is a reactive value)
+// Reconstruct softwareData and hardwareData from source.
 const softwareData = reconstructFunction(softwareSourceData.value)
-
-// Hardware node is left empty as it is hard to deal with while loading at the setup phase.
-const hardwareData = ref([])
+const hardwareData = reconstructFunction(hardwareSourceData.value)
 
 // Handle popup card
 const isPopupVisible = ref(false);
@@ -27,16 +42,6 @@ const popCardContent = ref([])
 function reconstructFunction(arr) {
     return arr.map(addMethodToArray);
 };
-
-// Function to fetch hardware data
-async function fetchHardwareData(payload) {
-    const newData = await $fetch('/api/fetchHardware', {
-        params: {
-            pcba_sn: payload
-        }
-    })
-    return newData;
-}
 
 // Function to fetch customer setting data
 async function fetchSettingData(payload) {
@@ -148,18 +153,6 @@ async function handleSubmit() {
 }
 
 onMounted(() => {
-    const boardsNode = getNode('boards');
-    boardsNode.on('commit', async ({ payload }) => {
-        // Fetch new data
-        const hardwareSourceData = await fetchHardwareData(payload)
-        // Reconstruct hardwareData from source. (hardwareSourceData is not a reactive value)
-        const hardwareReconstructData = reconstructFunction(hardwareSourceData)
-        // Update hardware node.
-        hardwareData.value = hardwareReconstructData
-        // Lock the boardNode as the change in hardwareData tend to lead to errors.
-        boardsNode.props.disabled = true
-    });
-
     const customersNode = getNode('customers');
     const softwareNode = getNode('software');
     customersNode.on('commit', async ({ payload }) => {
@@ -178,10 +171,10 @@ onMounted(() => {
 
 <template>
     <FormKit type="form" id="myform" @submit="handleSubmit">
+        <UButton label="Back to List" @click="navigateTo('/boards')" />
         <h2>Header</h2>
         <div class="header_container">
             <FormKit type="group" name="header" id="header">
-                <FormKitSchema :schema="boardsData" />
                 <FormKitSchema :schema="customersData" />
                 <FormKitSchema :schema="mailAddressesData" />
             </FormKit>

@@ -11,24 +11,16 @@ export default defineEventHandler(async (event) => {
         const records = await client.collection('boards').getFullList({
             sort: 'index'
         });
-    
-        // Create options by looping through the list and appending label and value
-        const options = records.map(item => ({
-            label: item.label,
-            value: item.value
+
+        // Map over the records to return only the specific fields
+        const formattedRecords = records.map(record => ({
+            pcba_sn: record.pcba_sn,
+            frame_size: record.frame_size,
+            mcu: record.mcu
         }));
-    
-        const schemaObject = {
-            $cmp: "FormKit",
-            props: {
-                name: "boards",
-                type: "select",
-                id: "boards",
-                label: "Boards",
-                options: options
-            }
-        };
-        return schemaObject;
+
+        return formattedRecords;
+
     } catch (error) {
         // Return a more graceful error response or handle logging
         console.error('Error fetching data from PocketBase:', error);
