@@ -4,6 +4,6 @@ export default defineNuxtConfig({
     apiUrl: process.env.NUXT_API_URL
   },
   compatibilityDate: '2024-04-03',
-  devtools: { enabled: false },
+  devtools: { enabled: true },
   modules: ['@nuxt/ui', '@formkit/nuxt'],
 })

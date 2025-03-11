@@ -32,6 +32,7 @@ const { data: settingData } = await useFetch('/api/fetchSetting', {
 
 // Reconstruct softwareData and hardwareData from source.
 const softwareData = reconstructFunction(softwareSourceData.value)
+console.log('softwareData:', JSON.stringify(softwareData, null, 2));
 const hardwareData = reconstructFunction(hardwareSourceData.value)
 
 // Handle popup card
@@ -71,27 +72,32 @@ function validation_function(node) {
 
 // Factory function that adds a method to an object
 function addMethodToArray(obj) {
-    if (obj.$el === 'h2') {
-        return obj;
-    } else if (obj.$el === 'div') {
+    // Base cases: return unchanged if not an object we need to process
+    if (!obj || typeof obj !== 'object') return obj;
+    if (obj.$el === 'h2') return obj;
+
+    // If it’s a div, process its children recursively
+    if (obj.$el === 'div') {
         return {
             ...obj,
-            children: obj.children.map(child => {
-                if (child.$cmp === 'FormKit') {
-                    return {
-                        ...child,
-                        props: {
-                            ...child.props,
-                            onPrefixIconClick: () => {
-                                handleIconClick(getNode(child.props.id), getNode('customers'));
-                            }
-                        }
-                    };
-                }
-                return child;
-            })
+            children: obj.children.map(child => addMethodToArray(child)) // Recurse into each child
         };
     }
+
+    // If it’s a FormKit component, add the onPrefixIconClick handler
+    if (obj.$cmp === 'FormKit') {
+        return {
+            ...obj, // Fixed: use `obj` instead of `child`
+            props: {
+                ...obj.props, // Fixed: use `obj.props`
+                onPrefixIconClick: () => {
+                    handleIconClick(getNode(obj.props.id), getNode('customers')); // Fixed: use `obj.props.id`
+                }
+            }
+        };
+    }
+
+    // Default: return unchanged (handles any other schema nodes)
     return obj;
 }
 
