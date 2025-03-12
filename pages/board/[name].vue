@@ -17,7 +17,6 @@ if (!board.value && route.params.name) {
 }
 
 const { data: customersData } = await useFetch('/api/fetchCustomers');
-const { data: mailAddressesData } = await useFetch('/api/fetchMailAddresses');
 const { data: hardwareSourceData } = await useFetch('/api/fetchHardware', {
     params: {
         pcba_sn: board.value.pcba_sn
@@ -32,12 +31,16 @@ const { data: settingData } = await useFetch('/api/fetchSetting', {
 
 // Reconstruct softwareData and hardwareData from source.
 const softwareData = reconstructFunction(softwareSourceData.value)
-console.log('softwareData:', JSON.stringify(softwareData, null, 2));
 const hardwareData = reconstructFunction(hardwareSourceData.value)
 
 // Handle popup card
 const isPopupVisible = ref(false);
 const popCardContent = ref([])
+
+// Download state
+const isProcessing = ref(false);
+const isReady = ref(false);
+const downloadUrl = ref('');
 
 // Function to process an array of objects
 function reconstructFunction(arr) {
@@ -102,7 +105,6 @@ function addMethodToArray(obj) {
 }
 
 function handleIconClick(clickedNode, customerNode) {
-    console.log(clickedNode.props)
     // Update pop card content
     popCardContent.value = [
         {
@@ -153,8 +155,35 @@ async function handleSubmit() {
             }
         });
         console.log(response);
+        // After submission, trigger the FastAPI filling process
+        await triggerFilling();
     } catch (error) {
         console.error('Error submitting form:', error);
+    }
+}
+
+async function triggerFilling() {
+    isProcessing.value = true;
+    isReady.value = false;
+    try {
+        const response = await $fetch('http://localhost:8000/fillingForm', { method: 'GET' });
+        console.log('Filling response:', response);
+        if (response.status === 'success' && response.file_url) {
+            downloadUrl.value = response.file_url;
+            isReady.value = true;
+        } else {
+            console.error('Filling failed:', response.message);
+        }
+    } catch (error) {
+        console.error('Error triggering filling:', error);
+    } finally {
+        isProcessing.value = false;
+    }
+}
+
+function downloadFile() {
+    if (downloadUrl.value) {
+        window.location.href = downloadUrl.value; // Simplest download method
     }
 }
 
@@ -182,7 +211,6 @@ onMounted(() => {
         <div class="header_container">
             <FormKit type="group" name="header" id="header">
                 <FormKitSchema :schema="customersData" />
-                <FormKitSchema :schema="mailAddressesData" />
             </FormKit>
         </div>
         <FormKit type="group" name="hardware" id="hardware">
@@ -192,6 +220,15 @@ onMounted(() => {
             <FormKitSchema :schema="softwareData" :data="validation" />
         </FormKit>
     </FormKit>
+
+    <!-- Processing and Download UI -->
+    <div v-if="isProcessing" class="mt-4">
+        <span>Processing...</span>
+    </div>
+    <div v-if="isReady" class="mt-4">
+        <UButton label="Download Application" color="primary" @click="downloadFile" />
+    </div>
+
     <UModal v-model="isPopupVisible">
         <UTable :rows="popCardContent" />
     </UModal>
